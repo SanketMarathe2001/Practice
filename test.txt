@@ -1,0 +1,315 @@
+"Practical 1 Horizontal"
+
+create database 1 create table employee and worker
+create database 2 create table officer same struct as employee
+
+DELIMITER $$
+create trigger ht
+after insert 
+on Employee for each row
+begin
+	if new.salary >= 100 then
+    insert into Worker values
+    (new.emp_id,new.full_name,new.address,new.designation,new.salary);
+    else
+    insert into pract1_db2.Officer values
+    (new.emp_id,new.full_name,new.address,new.designation,new.salary);    
+    end if;
+END $$
+
+DELIMITER ;
+
+insert values in employee
+
+display employee, worker and officer table data
+
+
+
+"Practical 2 Vertical"
+
+create database 1 create table patient and patient_personal_details
+create database 2 create table patient_official_details
+
+DELIMITER $$
+create trigger fr
+after insert on patient
+for each row
+begin
+insert into patient_personal_details values(new.pid,new.paddress,new.phone,new.email,new.religion);
+insert into db2.patient_official_details values(new.pid,new.bno,new.w_no,new.doc_no,new.service);
+end $$
+DELIMITER ;
+
+insert values in patient
+
+display patient, patient_personal_details and patient_official_details table data
+
+
+
+"Practical 3 Replication"
+
+
+create database 1 create table reservation
+create database 2 create table reservation 
+
+create table reservation as select * from pract1_db1.reservation;
+
+DELIMITER $$
+create trigger ins
+after insert on reservation
+for each row
+begin
+insert pract1_db2.reservation values 
+(new.bkid,new.custname,new.destination,new.class,new.cost);
+end 
+$$
+DELIMITER ;
+
+
+DELIMITER $$
+create trigger upd
+after update on reservation
+for each row
+begin
+update pract1_db2.reservation
+set 
+custname=new.custname, destination=new.destination,class=new.class,cost=new.cost
+where bkid=old.bkid;
+end 
+$$
+DELIMITER ;
+
+
+DELIMITER $$
+create trigger del
+after delete on reservation
+for each row
+begin
+delete from pract1_db2.reservation
+where bkid=old.bkid;
+end 
+$$
+DELIMITER ;
+
+insert values in reservation
+update values in reservation
+delete values in reservation
+
+
+"Practical 4 OODBMS" 
+
+create or replace type address_type1 as object(pincode number(5), street char(5), state varchar(50),no number(4)); 
+create or replace type branch_type as object(address address_type1, phone1 integer, phone2 integer); 
+create or replace type author_type as object(name varchar(32), address address_type1); 
+create or replace type branch_table_type as table of branch_type; 
+create or replace type publisher_type as object(name varchar(30),address address_type1, branches branch_table_type); 
+create or replace type author_list_type as varray(10) of ref author_type; 
+create table authors of author_type; 
+create table books(title varchar(50),published_by ref publisher_type, author author_list_type); 
+create table publisher of publisher_type nested table branches store as branch_table; 
+insert into authors values('sangoi',address_type(700,'dalal street','mumbai','maharashtra',1));
+
+
+"Practical 5 XML database"
+
+create table emp_xml(dep_id number(4), employee_spec XMLtype);
+
+insert into emp_xml values(1, XMLtype( 
+'<emp id="1"> 
+<name>Sanket</name> 
+<email>sanket@yahoo.com</email> 
+</emp>'));
+
+insert into emp_xml values(2, XMLtype( 
+'<emp id="3"> 
+<name>Sam</name> 
+<email>sam@yahoo.com</email> 
+</emp>'))
+
+select dep_id, e.employee_spec.getCLOBVAL() from emp_xml e
+
+select e.employee_spec.extract('//email/text()').getStringVal() "EMAIL" from emp_xml e
+
+
+"Practical 6 Active Database"
+
+create table emp( 
+emp int primary key, 
+ename varchar(20), 
+hrs number(8), 
+pno int)
+
+create table project( 
+pno int primary key, 
+pname varchar(30), 
+thrs number(8))
+
+insert into project values(1,'Mobile Comm',0)
+insert into project values(2,'ACN',0)
+insert into project values(3,'ADMS',0)
+insert into project values(4,'JAVA',0)
+insert into project values(5,'JAVA',0)
+
+create or replace trigger total_hrs after insert on emp for each row  
+when (new.pno is not null) 
+begin 
+update project 
+set thrs=thrs+:new.hrs 
+where pno=:new.pno; 
+end;
+
+insert into emp values(1,'sam',12,1)
+insert into emp values(2,'raj',12,3)
+insert into emp values(3,'roy',10,4)
+
+create or replace trigger total_hrs1 after update on emp for each row  
+when(new.pno is not null) 
+begin 
+update project 
+set thrs= thrs + :new.hrs - :old.hrs 
+where pno=:new.pno; 
+end;
+
+update emp set hrs=8 where emp=1 
+select * from project
+
+create or replace trigger total_hrs2 after update of pno on emp for each row 
+when(new.pno is not null) 
+begin 
+update project set thrs= thrs - :old.hrs where pno=:old.pno; 
+update project set thrs= thrs + :new.hrs where pno=:new.pno; 
+end;
+
+create or replace trigger total_hrs3 after delete on emp for each row 
+when(old.pno is not null) 
+begin 
+update project  
+set thrs= thrs - :old.hrs  
+where pno=:old.pno; 
+end;
+
+delete from emp where emp=1
+
+select * from emp
+select * from project
+
+
+"Practical 7 Temporal Database"
+
+create table Emp_Appnt(
+accno number,
+name varchar2(60),
+RecruDate timestamp(0),
+RetDate timestamp(0)
+)
+
+insert into Emp_Appnt values(1,'Harry Potter', to_timestamp('05-09-1980 09:15:12','dd-mm-yyyy hh24:mi:ss'), to_timestamp('15-01-2010 09:15:12','dd-mm-yyyy hh24:mi:ss'));
+insert into Emp_Appnt values(2,'Ron Weasley', to_timestamp('05-10-1982 09:15:12','dd-mm-yyyy hh24:mi:ss'), to_timestamp('15-01-2010 09:15:12','dd-mm-yyyy hh24:mi:ss'));
+insert into Emp_Appnt values(3,'Rubeus Hagrid', to_timestamp('06-12-1980 09:15:12','dd-mm-yyyy hh24:mi:ss'), to_timestamp('15-01-2010 09:15:12','dd-mm-yyyy hh24:mi:ss'));
+insert into Emp_Appnt values(6,'Bella Swan', to_timestamp('06-10-1981 09:15:12','dd-mm-yyyy hh24:mi:ss'), to_timestamp('15-01-2010 09:15:12','dd-mm-yyyy hh24:mi:ss'));
+
+select name from Emp_Appnt 
+where RecruDate = to_timestamp('05-09-1980 09:15:12','dd-mm-yyyy hh24:mi:ss')
+
+select name from Emp_Appnt
+where RetDate = to_timestamp('15-01-2010 09:15:12','dd-mm-yyyy hh24:mi:ss')
+
+create table shares(
+name varchar(20),
+no integer,
+price integer,
+transTime timestamp(0)
+)
+
+insert into shares values('ICICI BANK',95,151,to_timestamp('01-03-2001','dd-mm-yyyy'));
+insert into shares values('TCS',3,30,to_timestamp('12-10-1982','dd-mm-yyyy'));
+insert into shares values('AXIS BANK',25,200,to_timestamp('10-02-2002','dd-mm-yyyy'));
+
+select name from shares where (no*price) > 100 and transTime=to_timestamp('10-02-2002','dd-mm-yyyy');
+
+select name from shares where price=(select max(price) from shares where transTime=to_timestamp('01-03-2001','dd-mm-yyyy'));
+
+
+"Practical 8 Multimedia"
+
+create table employee(
+employee_id number(10),
+firstname varchar(10),
+lastname varchar(10),
+email varchar(25),
+hire_date date,
+job_id varchar(25),
+salary number(9),
+resume clob,
+picture blob
+)
+
+insert into employee values(1,'pratik','doshi','p.doshi@gmail.com','1 jul 2005','Project Manager',12000,EMPTY_CLOB(),NULL)
+
+select * from employee
+
+update employee set 
+resume = 'Date of Birth: 26 June 1986', picture = EMPTY_BLOB()
+where employee_id=1
+
+select * from Employee
+
+Declare lobloc CLOB;
+text varchar(32767):='Resigned: 5 August 2006';
+amount number;
+
+begin
+select resome into lobloc
+from employee
+where employee_id=1 for update;
+offset:= DBMS_LOB.GETLENGTH(lobloc)+2;
+amount:= length(text);
+DBMS_LOB.WRITE(lobloc,amount,offset,text);
+COMMIT;
+END;
+
+
+"Practical 9 Prolog programming"
+
+family.pl
+ 
+male(anil).
+male(sunil).
+male(rohan).
+female(rohini).
+female(sunita).
+parent(rohan,anil).
+parent(rohan,sunil).
+parent(rohan,rohini).
+parent(sunita,anil).
+parent(sunita,sunil).
+parent(sunita,rohini).
+
+father(X,Y):-male(X),parent(X,Y).
+mother(X,Y):-female(X),parent(X,Y).
+brother(X,Z):-male(X),parent(Y,X),parent(Y,Z).
+sister(X,Z):-female(X),parent(Y,X),parent(Y,Z).
+sibling(X,Y):-parent(Z,X),parent(Z,Y),X\=Y.
+daughter(X,Y):-female(X),parent(Y,X).
+son(X,Y):-male(X),parent(Y,X).
+pafullsibling(X,Y):-parent(Z,X),parent(Z,Y),parent(P,X),parent(P,Y),Z\=P,X\=Y.
+
+
+run the below commands
+
+[family]
+father(rohan,X).
+mother(sunita,X).
+father(rohan,sunil).
+mother(sunita,anil).
+mother(sunil,anil).
+father(rohan, sunil).
+brother(sunil,anil).
+sister(rohini,anil).
+fullsibling(rohini,sunil).
+daughter(rohini,sunita).
+son(sunil,sunita)
+
+
+
+
